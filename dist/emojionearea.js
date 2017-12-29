@@ -3,7 +3,7 @@
  * https://github.com/mervick/emojionearea
  * Copyright Andrey Izman and other contributors
  * Released under the MIT license
- * Date: 2017-12-29T02:46Z
+ * Date: 2017-12-29T04:49Z
  */
 window = ( typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {} );
 document = window.document || {};
@@ -105,7 +105,64 @@ document = window.document || {};
             return clear ? '' : shortname;
         });
     };
-    function pasteHtmlAtCaret(html) {
+    var uniRegexp;
+    function unicodeTo(str, template) {
+        return str.replace(uniRegexp, function(unicodeChar) {
+            var map = emojione[(emojioneSupportMode === 0 ? 'jsecapeMap' : 'jsEscapeMap')];
+            if (typeof unicodeChar !== 'undefined' && unicodeChar in map) {
+                return getTemplate(template, map[unicodeChar]);
+            }
+            return unicodeChar;
+        });
+    }
+    function textFromHtml(str, self) {
+        str = str
+            .replace(/&#10;/g, '\n')
+            .replace(/&#09;/g, '\t')
+            .replace(/<img[^>]*alt="([^"]+)"[^>]*>/ig, '$1')
+            .replace(/\n|\r/g, '')
+            .replace(/<br[^>]*>/ig, '\n')
+            .replace(/(?:<(?:div|p|ol|ul|li|pre|code|object)[^>]*>)+/ig, '<div>')
+            .replace(/(?:<\/(?:div|p|ol|ul|li|pre|code|object)>)+/ig, '</div>')
+            .replace(/\n<div><\/div>/ig, '\n')
+            .replace(/<div><\/div>\n/ig, '\n')
+            .replace(/(?:<div>)+<\/div>/ig, '\n')
+            .replace(/([^\n])<\/div><div>/ig, '$1\n')
+            .replace(/(?:<\/div>)+/ig, '</div>')
+            .replace(/([^\n])<\/div>([^\n])/ig, '$1\n$2')
+            .replace(/<\/div>/ig, '')
+            .replace(/([^\n])<div>/ig, '$1\n')
+            .replace(/\n<div>/ig, '\n')
+            .replace(/<div>\n/ig, '\n\n')
+            .replace(/<(?:[^>]+)?>/g, '')
+            .replace(new RegExp(invisibleChar, 'g'), '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'")
+            .replace(/&#x60;/g, '`')
+            .replace(/&#60;/g, '<')
+            .replace(/&#62;/g, '>')
+            .replace(/&amp;/g, '&');
+
+        switch (self.saveEmojisAs) {
+            case 'image':
+                str = unicodeTo(str, self.emojiTemplate);
+                break;
+            case 'shortname':
+                str = emojione.toShort(str);
+        }
+        return str;
+    }
+    function pasteHtmlAtCaret(html, self) {
+        // check to see if we can insert emoji
+        if (self && self.charLimit != -1){
+            var newText = self.getText() + textFromHtml(html, self);
+            if (newText.length > self.charLimit)
+                return;
+        }
+
         var sel, range;
         if (window.getSelection) {
             sel = window.getSelection();
@@ -125,6 +182,8 @@ document = window.document || {};
                     range.collapse(true);
                     sel.removeAllRanges();
                     sel.addRange(range);
+                    // invoke keypress
+                    $(range.startContainer).keypress()
                 }
             }
         } else if (document.selection && document.selection.type != "Control") {
@@ -210,6 +269,7 @@ document = window.document || {};
             useInternalCDN    : true, // Use the self loading mechanism
             imageType         : "png", // Default image type used by internal CDN
             recentEmojis      : true,
+            charLimit         : -1, // 0 for disable
             textcomplete: {
                 maxCount      : 15,
                 placement     : null // null - default | top | absleft | absright
@@ -672,16 +732,6 @@ document = window.document || {};
     }
 
 
-    var uniRegexp;
-    function unicodeTo(str, template) {
-        return str.replace(uniRegexp, function(unicodeChar) {
-            var map = emojione[(emojioneSupportMode === 0 ? 'jsecapeMap' : 'jsEscapeMap')];
-            if (typeof unicodeChar !== 'undefined' && unicodeChar in map) {
-                return getTemplate(template, map[unicodeChar]);
-            }
-            return unicodeChar;
-        });
-    }
     function htmlFromText(str, self) {
         str = str
             .replace(/&/g, '&amp;')
@@ -700,46 +750,6 @@ document = window.document || {};
         return unicodeTo(str, self.emojiTemplate)
             .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
             .replace(/  /g, '&nbsp;&nbsp;');
-    }
-    function textFromHtml(str, self) {
-        str = str
-            .replace(/&#10;/g, '\n')
-            .replace(/&#09;/g, '\t')
-            .replace(/<img[^>]*alt="([^"]+)"[^>]*>/ig, '$1')
-            .replace(/\n|\r/g, '')
-            .replace(/<br[^>]*>/ig, '\n')
-            .replace(/(?:<(?:div|p|ol|ul|li|pre|code|object)[^>]*>)+/ig, '<div>')
-            .replace(/(?:<\/(?:div|p|ol|ul|li|pre|code|object)>)+/ig, '</div>')
-            .replace(/\n<div><\/div>/ig, '\n')
-            .replace(/<div><\/div>\n/ig, '\n')
-            .replace(/(?:<div>)+<\/div>/ig, '\n')
-            .replace(/([^\n])<\/div><div>/ig, '$1\n')
-            .replace(/(?:<\/div>)+/ig, '</div>')
-            .replace(/([^\n])<\/div>([^\n])/ig, '$1\n$2')
-            .replace(/<\/div>/ig, '')
-            .replace(/([^\n])<div>/ig, '$1\n')
-            .replace(/\n<div>/ig, '\n')
-            .replace(/<div>\n/ig, '\n\n')
-            .replace(/<(?:[^>]+)?>/g, '')
-            .replace(new RegExp(invisibleChar, 'g'), '')
-            .replace(/&nbsp;/g, ' ')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#x27;/g, "'")
-            .replace(/&#x60;/g, '`')
-            .replace(/&#60;/g, '<')
-            .replace(/&#62;/g, '>')
-            .replace(/&amp;/g, '&');
-
-        switch (self.saveEmojisAs) {
-            case 'image':
-                str = unicodeTo(str, self.emojiTemplate);
-                break;
-            case 'shortname':
-                str = emojione.toShort(str);
-        }
-        return str;
     }
     function calcButtonPosition() {
         var self = this,
@@ -870,6 +880,7 @@ document = window.document || {};
         self.emojiTemplateAlt = self.sprite ? '<i class="emojione-{uni}"/>' : '<img class="emojioneemoji" src="{img}"/>';
         self.emojiBtnTemplate = '<i class="emojibtn" role="button" data-name="{name}" title="{friendlyName}">' + self.emojiTemplateAlt + '</i>';
         self.recentEmojis = options.recentEmojis && supportsLocalStorage();
+        self.charLimit = options.charLimit;
 
         var pickerPosition = options.pickerPosition;
         self.floatingPicker = pickerPosition === 'top' || pickerPosition === 'bottom';
@@ -1052,7 +1063,7 @@ document = window.document || {};
         if (options.search) {
             attach(self, self.search, {keyup: "search.keypress", focus: "search.focus", blur: "search.blur"});
         }
-
+        
         var noListenScroll = false;
         scrollArea.on('scroll', function () {
             if (!noListenScroll) {
@@ -1073,6 +1084,14 @@ document = window.document || {};
                 }
             }
         });
+        
+        self.on("@keypress", function(editor, event) {
+            // check to see if we can type anymore
+            if (self && self.charLimit != -1){
+                if (self.getText().length >= self.charLimit)
+                    event.preventDefault();
+            }
+        })
 
         self.on("@filter.click", function(filter) {
             var isActive = filter.is(".active");
@@ -1137,8 +1156,8 @@ document = window.document || {};
             var pasteText = function(text) {
                 var caretID = "caret-" + (new Date()).getTime();
                 var html = htmlFromText(text, self);
-                pasteHtmlAtCaret(html);
-                pasteHtmlAtCaret('<i id="' + caretID +'"></i>');
+                pasteHtmlAtCaret(html, self);
+                pasteHtmlAtCaret('<i id="' + caretID +'"></i>', self);
                 editor.scrollTop(editorScrollTop);
                 var caret = $("#" + caretID),
                     top = caret.offset().top - editor.offset().top,
@@ -1169,7 +1188,7 @@ document = window.document || {};
 
             self.stayFocused = true;
             // insert invisible character for fix caret position
-            pasteHtmlAtCaret('<span>' + invisibleChar + '</span>');
+            pasteHtmlAtCaret('<span>' + invisibleChar + '</span>', self);
 
             var sel = saveSelection(editor[0]),
                 editorScrollTop = editor.scrollTop(),
@@ -1201,7 +1220,7 @@ document = window.document || {};
                 self.trigger("blur");
             } else {
                 saveSelection(editor[0]);
-                pasteHtmlAtCaret(shortnameTo(emojibtn.data("name"), self.emojiTemplate));
+                pasteHtmlAtCaret(shortnameTo(emojibtn.data("name"), self.emojiTemplate), self);
             }
 
             if (self.recentEmojis) {
@@ -1397,7 +1416,12 @@ document = window.document || {};
                             return shortnameTo(value, self.emojiTemplate) + " " + value.replace(/:/g, '');
                         },
                         replace: function (value) {
-                            return shortnameTo(value, self.emojiTemplate);
+                            // check to see if we can insert that in
+                            if (self && self.charLimit != -1){
+                                if ((self.getText() + value).length >= self.charLimit)
+                                    return "";
+                            }
+                            return shortnameTo(value, self.emojiTemplate);;
                         },
                         cache: true,
                         index: 1

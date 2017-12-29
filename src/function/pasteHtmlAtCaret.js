@@ -1,5 +1,16 @@
-define([], function() {
-    return function(html) {
+define([
+    'jquery',
+    'function/textFromHtml',
+],
+function($, textFromHtml) {
+    return function(html, self) {
+        // check to see if we can insert emoji
+        if (self && self.charLimit != -1){
+            var newText = self.getText() + textFromHtml(html, self);
+            if (newText.length > self.charLimit)
+                return;
+        }
+
         var sel, range;
         if (window.getSelection) {
             sel = window.getSelection();
@@ -19,6 +30,8 @@ define([], function() {
                     range.collapse(true);
                     sel.removeAllRanges();
                     sel.addRange(range);
+                    // invoke keypress
+                    $(range.startContainer).keypress()
                 }
             }
         } else if (document.selection && document.selection.type != "Control") {

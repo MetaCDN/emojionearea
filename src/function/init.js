@@ -42,6 +42,7 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
         self.emojiTemplateAlt = self.sprite ? '<i class="emojione-{uni}"/>' : '<img class="emojioneemoji" src="{img}"/>';
         self.emojiBtnTemplate = '<i class="emojibtn" role="button" data-name="{name}" title="{friendlyName}">' + self.emojiTemplateAlt + '</i>';
         self.recentEmojis = options.recentEmojis && supportsLocalStorage();
+        self.charLimit = options.charLimit;
 
         var pickerPosition = options.pickerPosition;
         self.floatingPicker = pickerPosition === 'top' || pickerPosition === 'bottom';
@@ -224,7 +225,7 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
         if (options.search) {
             attach(self, self.search, {keyup: "search.keypress", focus: "search.focus", blur: "search.blur"});
         }
-
+        
         var noListenScroll = false;
         scrollArea.on('scroll', function () {
             if (!noListenScroll) {
@@ -245,6 +246,14 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
                 }
             }
         });
+        
+        self.on("@keypress", function(editor, event) {
+            // check to see if we can type anymore
+            if (self && self.charLimit != -1){
+                if (self.getText().length >= self.charLimit)
+                    event.preventDefault();
+            }
+        })
 
         self.on("@filter.click", function(filter) {
             var isActive = filter.is(".active");
@@ -309,8 +318,8 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
             var pasteText = function(text) {
                 var caretID = "caret-" + (new Date()).getTime();
                 var html = htmlFromText(text, self);
-                pasteHtmlAtCaret(html);
-                pasteHtmlAtCaret('<i id="' + caretID +'"></i>');
+                pasteHtmlAtCaret(html, self);
+                pasteHtmlAtCaret('<i id="' + caretID +'"></i>', self);
                 editor.scrollTop(editorScrollTop);
                 var caret = $("#" + caretID),
                     top = caret.offset().top - editor.offset().top,
@@ -341,7 +350,7 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
 
             self.stayFocused = true;
             // insert invisible character for fix caret position
-            pasteHtmlAtCaret('<span>' + invisibleChar + '</span>');
+            pasteHtmlAtCaret('<span>' + invisibleChar + '</span>', self);
 
             var sel = saveSelection(editor[0]),
                 editorScrollTop = editor.scrollTop(),
@@ -373,7 +382,7 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
                 self.trigger("blur");
             } else {
                 saveSelection(editor[0]);
-                pasteHtmlAtCaret(shortnameTo(emojibtn.data("name"), self.emojiTemplate));
+                pasteHtmlAtCaret(shortnameTo(emojibtn.data("name"), self.emojiTemplate), self);
             }
 
             if (self.recentEmojis) {
@@ -569,7 +578,12 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
                             return shortnameTo(value, self.emojiTemplate) + " " + value.replace(/:/g, '');
                         },
                         replace: function (value) {
-                            return shortnameTo(value, self.emojiTemplate);
+                            // check to see if we can insert that in
+                            if (self && self.charLimit != -1){
+                                if ((self.getText() + value).length >= self.charLimit)
+                                    return "";
+                            }
+                            return shortnameTo(value, self.emojiTemplate);;
                         },
                         cache: true,
                         index: 1
