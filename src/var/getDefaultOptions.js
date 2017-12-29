@@ -38,6 +38,7 @@ function($, emojione, emojioneVersion, detectVersion, getSupportMode) {
             shortcuts         : true,
             autocomplete      : true,
             autocompleteTones : false,
+            autocompleteTab   : false, // Use autocomplete with the TAB as well as Enter
             standalone        : false,
             useInternalCDN    : true, // Use the self loading mechanism
             imageType         : "png", // Default image type used by internal CDN

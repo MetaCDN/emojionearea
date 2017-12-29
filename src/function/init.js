@@ -512,7 +512,8 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
         if (options.shortcuts) {
             self.on("@keydown", function(_, e) {
                 if (!e.ctrlKey) {
-                    if (e.which == 9) {
+                    // If autocompleteTab is enabled, then don't open the emoji menu
+                    if (e.which == 9 && !options.autocompleteTab) {
                         e.preventDefault();
                         button.click();
                     }
@@ -541,8 +542,12 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
 
                 if (options.shortcuts) {
                     textcompleteOptions.onKeydown = function (e, commands) {
-                        if (!e.ctrlKey && e.which == 13) {
-                            return commands.KEY_ENTER;
+                        if (!e.ctrlKey) {
+                            // Use tab if wanted
+                            if (options.autocompleteTab && e.which == 7)
+                                return commands.KEY_ENTER;
+                            if (e.which == 13)
+                                return commands.KEY_ENTER;
                         }
                     };
                 }

@@ -3,7 +3,7 @@
  * https://github.com/mervick/emojionearea
  * Copyright Andrey Izman and other contributors
  * Released under the MIT license
- * Date: 2017-12-15T15:15Z
+ * Date: 2017-12-29T02:46Z
  */
 window = ( typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {} );
 document = window.document || {};
@@ -205,6 +205,7 @@ document = window.document || {};
             shortcuts         : true,
             autocomplete      : true,
             autocompleteTones : false,
+            autocompleteTab   : false, // Use autocomplete with the TAB as well as Enter
             standalone        : false,
             useInternalCDN    : true, // Use the self loading mechanism
             imageType         : "png", // Default image type used by internal CDN
@@ -1339,7 +1340,8 @@ document = window.document || {};
         if (options.shortcuts) {
             self.on("@keydown", function(_, e) {
                 if (!e.ctrlKey) {
-                    if (e.which == 9) {
+                    // If autocompleteTab is enabled, then don't open the emoji menu
+                    if (e.which == 9 && !options.autocompleteTab) {
                         e.preventDefault();
                         button.click();
                     }
@@ -1368,8 +1370,12 @@ document = window.document || {};
 
                 if (options.shortcuts) {
                     textcompleteOptions.onKeydown = function (e, commands) {
-                        if (!e.ctrlKey && e.which == 13) {
-                            return commands.KEY_ENTER;
+                        if (!e.ctrlKey) {
+                            // Use tab if wanted
+                            if (options.autocompleteTab && e.which == 7)
+                                return commands.KEY_ENTER;
+                            if (e.which == 13)
+                                return commands.KEY_ENTER;
                         }
                     };
                 }
