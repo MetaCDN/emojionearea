@@ -3,7 +3,7 @@
  * https://github.com/mervick/emojionearea
  * Copyright Andrey Izman and other contributors
  * Released under the MIT license
- * Date: 2017-12-29T04:49Z
+ * Date: 2018-01-02T22:52Z
  */
 window = ( typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {} );
 document = window.document || {};
@@ -156,18 +156,17 @@ document = window.document || {};
         return str;
     }
     function pasteHtmlAtCaret(html, self) {
-        // check to see if we can insert emoji
-        if (self && self.charLimit != -1){
-            var newText = self.getText() + textFromHtml(html, self);
-            if (newText.length > self.charLimit)
-                return;
-        }
-
         var sel, range;
         if (window.getSelection) {
             sel = window.getSelection();
             if (sel.getRangeAt && sel.rangeCount) {
                 range = sel.getRangeAt(0);
+                // check to see if we can insert emoji
+                if (self && self.charLimit != -1){
+                    var newText = self.getText() + textFromHtml(html, self);
+                    if (newText.length - range.toString().length > self.charLimit)
+                        return;
+                }
                 range.deleteContents();
                 var el = document.createElement("div");
                 el.innerHTML = html;
@@ -187,6 +186,12 @@ document = window.document || {};
                 }
             }
         } else if (document.selection && document.selection.type != "Control") {
+            // check to see if we can insert emoji
+            if (self && self.charLimit != -1){
+                var newText = self.getText() + textFromHtml(html, self);
+                if (newText.length > self.charLimit)
+                    return;
+            }
             document.selection.createRange().pasteHTML(html);
         }
     }
@@ -1086,9 +1091,18 @@ document = window.document || {};
         });
         
         self.on("@keypress", function(editor, event) {
+            // see if there's a selection
+            var selectionLength = 0;
+            if (window.getSelection()){
+                var sel = window.getSelection();
+                if (sel.getRangeAt && sel.rangeCount) {
+                    var range = sel.getRangeAt(0);
+                    selectionLength = range.toString().length;
+                }
+            }            
             // check to see if we can type anymore
             if (self && self.charLimit != -1){
-                if (self.getText().length >= self.charLimit)
+                if (self.getText().length - selectionLength >= self.charLimit)
                     event.preventDefault();
             }
         })

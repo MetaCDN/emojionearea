@@ -4,18 +4,17 @@ define([
 ],
 function($, textFromHtml) {
     return function(html, self) {
-        // check to see if we can insert emoji
-        if (self && self.charLimit != -1){
-            var newText = self.getText() + textFromHtml(html, self);
-            if (newText.length > self.charLimit)
-                return;
-        }
-
         var sel, range;
         if (window.getSelection) {
             sel = window.getSelection();
             if (sel.getRangeAt && sel.rangeCount) {
                 range = sel.getRangeAt(0);
+                // check to see if we can insert emoji
+                if (self && self.charLimit != -1){
+                    var newText = self.getText() + textFromHtml(html, self);
+                    if (newText.length - range.toString().length > self.charLimit)
+                        return;
+                }
                 range.deleteContents();
                 var el = document.createElement("div");
                 el.innerHTML = html;
@@ -35,6 +34,12 @@ function($, textFromHtml) {
                 }
             }
         } else if (document.selection && document.selection.type != "Control") {
+            // check to see if we can insert emoji
+            if (self && self.charLimit != -1){
+                var newText = self.getText() + textFromHtml(html, self);
+                if (newText.length > self.charLimit)
+                    return;
+            }
             document.selection.createRange().pasteHTML(html);
         }
     }

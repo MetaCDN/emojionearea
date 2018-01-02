@@ -248,9 +248,18 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
         });
         
         self.on("@keypress", function(editor, event) {
+            // see if there's a selection
+            var selectionLength = 0;
+            if (window.getSelection()){
+                var sel = window.getSelection();
+                if (sel.getRangeAt && sel.rangeCount) {
+                    var range = sel.getRangeAt(0);
+                    selectionLength = range.toString().length;
+                }
+            }            
             // check to see if we can type anymore
             if (self && self.charLimit != -1){
-                if (self.getText().length >= self.charLimit)
+                if (self.getText().length - selectionLength >= self.charLimit)
                     event.preventDefault();
             }
         })
