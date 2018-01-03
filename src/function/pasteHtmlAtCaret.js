@@ -11,8 +11,8 @@ function($, textFromHtml) {
                 range = sel.getRangeAt(0);
                 // check to see if we can insert emoji
                 if (self && self.charLimit != -1){
-                    var newText = self.getText() + textFromHtml(html, self);
-                    if (newText.length - range.toString().length > self.charLimit)
+                    var newLength = self.getLength() + textFromHtml(html, self).length;
+                    if (newLength - range.toString().length > self.charLimit)
                         return;
                 }
                 range.deleteContents();
@@ -31,13 +31,14 @@ function($, textFromHtml) {
                     sel.addRange(range);
                     // invoke keypress
                     $(range.startContainer).keypress()
+                    $(range.startContainer).keyup()
                 }
             }
         } else if (document.selection && document.selection.type != "Control") {
             // check to see if we can insert emoji
             if (self && self.charLimit != -1){
-                var newText = self.getText() + textFromHtml(html, self);
-                if (newText.length > self.charLimit)
+                var newLength = getLength().length + textFromHtml(html, self).length;
+                if (newText > self.charLimit)
                     return;
             }
             document.selection.createRange().pasteHTML(html);

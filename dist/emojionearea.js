@@ -3,7 +3,7 @@
  * https://github.com/mervick/emojionearea
  * Copyright Andrey Izman and other contributors
  * Released under the MIT license
- * Date: 2018-01-02T22:52Z
+ * Date: 2018-01-03T01:36Z
  */
 window = ( typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {} );
 document = window.document || {};
@@ -83,12 +83,15 @@ document = window.document || {};
         } else {
             fname = unicode;
         }
+        var alt = emojione.convert(unicode);
+        var title = shortname || emojione.toShort(alt);
         return template
             .replace('{name}', shortname || '')
             .replace('{friendlyName}', friendlyName)
             .replace('{img}', imagePath + (emojioneSupportMode < 2 ? fname.toUpperCase() : fname) + '.' + imageType)
             .replace('{uni}', unicode)
-            .replace('{alt}', emojione.convert(unicode));
+            .replace('{alt}', alt)
+            .replace('{title}', title)
     };
     function shortnameTo(str, template, clear) {
         return str.replace(/:?\+?[\w_\-]+:?/g, function(shortname) {
@@ -146,14 +149,19 @@ document = window.document || {};
             .replace(/&#62;/g, '>')
             .replace(/&amp;/g, '&');
 
-        switch (self.saveEmojisAs) {
-            case 'image':
-                str = unicodeTo(str, self.emojiTemplate);
-                break;
-            case 'shortname':
-                str = emojione.toShort(str);
+        if (!self)
+            str = emojione.toShort(str);
+        else {
+            switch (self.saveEmojisAs) {
+                case 'image':
+                    str = unicodeTo(str, self.emojiTemplate);
+                    break;
+                case 'shortname':
+                    str = emojione.toShort(str);
+            }
         }
         return str;
+        
     }
     function pasteHtmlAtCaret(html, self) {
         var sel, range;
@@ -163,8 +171,8 @@ document = window.document || {};
                 range = sel.getRangeAt(0);
                 // check to see if we can insert emoji
                 if (self && self.charLimit != -1){
-                    var newText = self.getText() + textFromHtml(html, self);
-                    if (newText.length - range.toString().length > self.charLimit)
+                    var newLength = self.getLength() + textFromHtml(html, self).length;
+                    if (newLength - range.toString().length > self.charLimit)
                         return;
                 }
                 range.deleteContents();
@@ -183,13 +191,14 @@ document = window.document || {};
                     sel.addRange(range);
                     // invoke keypress
                     $(range.startContainer).keypress()
+                    $(range.startContainer).keyup()
                 }
             }
         } else if (document.selection && document.selection.type != "Control") {
             // check to see if we can insert emoji
             if (self && self.charLimit != -1){
-                var newText = self.getText() + textFromHtml(html, self);
-                if (newText.length > self.charLimit)
+                var newLength = getLength().length + textFromHtml(html, self).length;
+                if (newText > self.charLimit)
                     return;
             }
             document.selection.createRange().pasteHTML(html);
@@ -756,6 +765,20 @@ document = window.document || {};
             .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
             .replace(/  /g, '&nbsp;&nbsp;');
     }
+    function lengthFromHtml(html) {
+        // captures the emoji text and title
+        var regex = /(<img.*?class="emojione".*?title="(.*?)".*?>)/g;
+        // remove i tags
+        var regex2 = /(<i.*?\/i>)/g;
+
+        var matches = [];
+        var result = html;
+        while (matches = regex.exec(html)) {
+            result = result.replace(matches[1], matches[2])
+        }
+        result = result.replace(regex2, "")
+        return result.toString().length;
+    }
     function calcButtonPosition() {
         var self = this,
             offset = self.editor[0].offsetWidth - self.editor[0].clientWidth,
@@ -881,7 +904,7 @@ document = window.document || {};
         self.shortnames = options.shortnames;
         self.saveEmojisAs = options.saveEmojisAs;
         self.standalone = options.standalone;
-        self.emojiTemplate = '<img alt="{alt}" class="emojione' + (self.sprite ? '-{uni}" src="' + blankImg + '"/>' : 'emoji" src="{img}"/>');
+        self.emojiTemplate = '<img alt="{alt}" class="emojione" title="{title}" ' + (self.sprite ? '-{uni}" src="' + blankImg + '"/>' : 'emoji" src="{img}"/>');
         self.emojiTemplateAlt = self.sprite ? '<i class="emojione-{uni}"/>' : '<img class="emojioneemoji" src="{img}"/>';
         self.emojiBtnTemplate = '<i class="emojibtn" role="button" data-name="{name}" title="{friendlyName}">' + self.emojiTemplateAlt + '</i>';
         self.recentEmojis = options.recentEmojis && supportsLocalStorage();
@@ -1102,7 +1125,7 @@ document = window.document || {};
             }            
             // check to see if we can type anymore
             if (self && self.charLimit != -1){
-                if (self.getText().length - selectionLength >= self.charLimit)
+                if (self.getLength() - selectionLength >= self.charLimit)
                     event.preventDefault();
             }
         })
@@ -1432,7 +1455,7 @@ document = window.document || {};
                         replace: function (value) {
                             // check to see if we can insert that in
                             if (self && self.charLimit != -1){
-                                if ((self.getText() + value).length >= self.charLimit)
+                                if (self.getLength() + value.length >= self.charLimit)
                                     return "";
                             }
                             return shortnameTo(value, self.emojiTemplate);;
@@ -1661,6 +1684,10 @@ document = window.document || {};
 
     EmojioneArea.prototype.getText = function() {
         return textFromHtml(this.editor.html(), this);
+    }
+
+    EmojioneArea.prototype.getLength = function() {
+        return lengthFromHtml(this.editor.html());
     }
 
     EmojioneArea.prototype.showPicker = function () {

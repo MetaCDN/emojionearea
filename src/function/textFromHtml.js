@@ -35,13 +35,18 @@ function(emojione, invisibleChar, unicodeTo) {
             .replace(/&#62;/g, '>')
             .replace(/&amp;/g, '&');
 
-        switch (self.saveEmojisAs) {
-            case 'image':
-                str = unicodeTo(str, self.emojiTemplate);
-                break;
-            case 'shortname':
-                str = emojione.toShort(str);
+        if (!self)
+            str = emojione.toShort(str);
+        else {
+            switch (self.saveEmojisAs) {
+                case 'image':
+                    str = unicodeTo(str, self.emojiTemplate);
+                    break;
+                case 'shortname':
+                    str = emojione.toShort(str);
+            }
         }
         return str;
+        
     }
 });

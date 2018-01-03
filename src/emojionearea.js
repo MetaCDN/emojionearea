@@ -12,6 +12,7 @@ define([
     'prototype/setFocus',
     'prototype/setText',
     'prototype/getText',
+    'prototype/getLength',
     'prototype/showPicker',
     'prototype/hidePicker',
     'prototype/enable',

@@ -21,11 +21,14 @@ function(emojione, emojioneSupportMode) {
         } else {
             fname = unicode;
         }
+        var alt = emojione.convert(unicode);
+        var title = shortname || emojione.toShort(alt);
         return template
             .replace('{name}', shortname || '')
             .replace('{friendlyName}', friendlyName)
             .replace('{img}', imagePath + (emojioneSupportMode < 2 ? fname.toUpperCase() : fname) + '.' + imageType)
             .replace('{uni}', unicode)
-            .replace('{alt}', emojione.convert(unicode));
+            .replace('{alt}', alt)
+            .replace('{title}', title)
     };
 });

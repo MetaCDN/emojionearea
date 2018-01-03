@@ -15,6 +15,7 @@ define([
     'function/restoreSelection',
     'function/htmlFromText',
     'function/textFromHtml',
+    'function/lengthFromHtml',
     'function/isObject',
     'function/calcButtonPosition',
     'function/lazyLoading',
@@ -27,7 +28,7 @@ define([
     //'function/calcElapsedTime', // debug only
 ],
 function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisibleChar, trigger, attach, shortnameTo,
-         pasteHtmlAtCaret, getOptions, saveSelection, restoreSelection, htmlFromText, textFromHtml, isObject,
+         pasteHtmlAtCaret, getOptions, saveSelection, restoreSelection, htmlFromText, textFromHtml, lengthFromHtml, isObject,
          calcButtonPosition, lazyLoading, selector, div, updateRecent, getRecent, setRecent, supportsLocalStorage)
 {
     return function(self, source, options) {
@@ -38,7 +39,7 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
         self.shortnames = options.shortnames;
         self.saveEmojisAs = options.saveEmojisAs;
         self.standalone = options.standalone;
-        self.emojiTemplate = '<img alt="{alt}" class="emojione' + (self.sprite ? '-{uni}" src="' + blankImg + '"/>' : 'emoji" src="{img}"/>');
+        self.emojiTemplate = '<img alt="{alt}" class="emojione" title="{title}" ' + (self.sprite ? '-{uni}" src="' + blankImg + '"/>' : 'emoji" src="{img}"/>');
         self.emojiTemplateAlt = self.sprite ? '<i class="emojione-{uni}"/>' : '<img class="emojioneemoji" src="{img}"/>';
         self.emojiBtnTemplate = '<i class="emojibtn" role="button" data-name="{name}" title="{friendlyName}">' + self.emojiTemplateAlt + '</i>';
         self.recentEmojis = options.recentEmojis && supportsLocalStorage();
@@ -259,7 +260,7 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
             }            
             // check to see if we can type anymore
             if (self && self.charLimit != -1){
-                if (self.getText().length - selectionLength >= self.charLimit)
+                if (self.getLength() - selectionLength >= self.charLimit)
                     event.preventDefault();
             }
         })
@@ -589,7 +590,7 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
                         replace: function (value) {
                             // check to see if we can insert that in
                             if (self && self.charLimit != -1){
-                                if ((self.getText() + value).length >= self.charLimit)
+                                if (self.getLength() + value.length >= self.charLimit)
                                     return "";
                             }
                             return shortnameTo(value, self.emojiTemplate);;
