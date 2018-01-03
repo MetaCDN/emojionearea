@@ -3,7 +3,7 @@
  * https://github.com/mervick/emojionearea
  * Copyright Andrey Izman and other contributors
  * Released under the MIT license
- * Date: 2018-01-03T01:36Z
+ * Date: 2018-01-03T23:54Z
  */
 window = ( typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {} );
 document = window.document || {};
@@ -776,6 +776,14 @@ document = window.document || {};
         while (matches = regex.exec(html)) {
             result = result.replace(matches[1], matches[2])
         }
+
+        //decode any html encoding
+        if (result.length !== 0){
+            var e = document.createElement('div');
+            e.innerHTML = result;
+            result = e.childNodes[0].nodeValue;
+        }
+
         result = result.replace(regex2, "")
         return result.toString().length;
     }
