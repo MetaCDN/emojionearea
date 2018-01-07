@@ -19,7 +19,7 @@ function() {
             result = e.childNodes[0].nodeValue;
         }
 
-        result = result.replace(regex2, "")
+        result = result != null ? result.replace(regex2, "") : ""
         return result.toString().length;
     }
 });

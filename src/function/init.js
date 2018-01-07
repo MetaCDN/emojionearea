@@ -634,11 +634,11 @@ function($, emojione, blankImg, slice, css_class, emojioneSupportMode, invisible
 
         if (self.inline) {
             app.addClass(selector('inline', true));
-            self.on("@keydown", function(_, e) {
+            /*self.on("@keydown", function(_, e) {
                 if (e.which == 13) {
                     e.preventDefault();
                 }
-            });
+            });*/
         }
 
         if (/firefox/i.test(navigator.userAgent)) {
